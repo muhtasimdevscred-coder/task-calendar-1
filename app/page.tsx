@@ -10,6 +10,8 @@ import {
   Check,
   X,
   Loader2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { formatDate, formatDateForInput } from "@/lib/dates";
 
@@ -21,6 +23,7 @@ type Task = {
 };
 
 type Filter = "all" | "week" | "month";
+type Theme = "light" | "dark";
 
 const POST_TYPES = [
   "Reel",
@@ -38,18 +41,39 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [refDate, setRefDate] = useState(formatDateForInput(new Date()));
+  const [theme, setTheme] = useState<Theme>("light");
 
-  // Form state
   const [date, setDate] = useState(formatDateForInput(new Date()));
   const [task, setTask] = useState("");
   const [postType, setPostType] = useState(POST_TYPES[0]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTask, setEditTask] = useState("");
   const [editPostType, setEditPostType] = useState("");
+
+  // Load saved theme on mount
+  useEffect(() => {
+    const saved = (typeof window !== "undefined" &&
+      localStorage.getItem("theme")) as Theme | null;
+    const initial: Theme =
+      saved ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light");
+    setTheme(initial);
+    document.documentElement.setAttribute("data-theme", initial);
+  }, []);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch {}
+  };
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -141,30 +165,40 @@ export default function Home() {
 
   return (
     <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 md:py-16">
-      {/* Header */}
-      <header className="mb-12 animate-fade-up">
-        <div className="flex items-center gap-3 mb-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: "var(--accent)" }}
-          />
-          <span
-            className="text-xs uppercase tracking-[0.2em] font-medium"
-            style={{ color: "var(--muted)" }}
+      {/* Header with theme toggle */}
+      <header className="mb-12 animate-fade-up flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ background: "var(--accent)" }}
+            />
+            <span
+              className="text-xs uppercase tracking-[0.2em] font-medium"
+              style={{ color: "var(--muted)" }}
+            >
+              Daily Planner
+            </span>
+          </div>
+          <h1 className="font-display text-5xl md:text-6xl font-medium leading-[1.05] tracking-tight">
+            Task <em className="italic" style={{ color: "var(--accent)" }}>Calendar</em>
+          </h1>
+          <p
+            className="mt-4 text-base max-w-xl"
+            style={{ color: "var(--ink-soft)" }}
           >
-            Daily Planner
-          </span>
+            Plan your daily tasks and post types in one place. Filter by week or
+            month, edit on the fly, and export to Excel.
+          </p>
         </div>
-        <h1 className="font-display text-5xl md:text-6xl font-medium leading-[1.05] tracking-tight">
-          Task <em className="italic" style={{ color: "var(--accent)" }}>Calendar</em>
-        </h1>
-        <p
-          className="mt-4 text-base max-w-xl"
-          style={{ color: "var(--ink-soft)" }}
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle flex-shrink-0"
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
         >
-          Plan your daily tasks and post types in one place. Filter by week or
-          month, edit on the fly, and export to Excel.
-        </p>
+          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
       </header>
 
       {/* Add new task */}
@@ -316,7 +350,7 @@ export default function Home() {
                 <div
                   className="px-6 py-3 flex items-baseline gap-3 sticky top-0 backdrop-blur"
                   style={{
-                    background: "rgba(245, 240, 230, 0.85)",
+                    background: "color-mix(in srgb, var(--cream) 85%, transparent)",
                     borderBottom: "1px solid var(--line)",
                   }}
                 >
@@ -337,7 +371,7 @@ export default function Home() {
                   {items.map((t) => (
                     <li
                       key={t.id}
-                      className="px-6 py-4 flex items-start gap-4 hover:bg-[color:var(--cream-deep)]/40 transition-colors"
+                      className="px-6 py-4 flex items-start gap-4 transition-colors"
                       style={{ borderTop: "1px solid var(--line)" }}
                     >
                       {editingId === t.id ? (
