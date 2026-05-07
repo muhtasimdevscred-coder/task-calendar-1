@@ -1,0 +1,22 @@
+// Prisma schema
+// Uses PostgreSQL (works with Vercel Postgres, Neon, Supabase, etc.)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  date      DateTime
+  task      String
+  postType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
