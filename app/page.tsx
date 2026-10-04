@@ -53,6 +53,10 @@ export default function Home() {
   const [editTask, setEditTask] = useState("");
   const [editPostType, setEditPostType] = useState("");
 
+  // Export date range state
+  const [exportFrom, setExportFrom] = useState("");
+  const [exportTo, setExportTo] = useState("");
+
   // Load saved theme on mount
   useEffect(() => {
     const saved = (typeof window !== "undefined" &&
@@ -148,8 +152,9 @@ export default function Home() {
   };
 
   const downloadExcel = () => {
-    const params = new URLSearchParams({ filter });
-    if (filter !== "all") params.set("refDate", refDate);
+    const params = new URLSearchParams();
+    if (exportFrom) params.set("from", exportFrom);
+    if (exportTo) params.set("to", exportTo);
     window.location.href = `/api/export?${params.toString()}`;
   };
 
@@ -313,10 +318,72 @@ export default function Home() {
             </div>
           )}
         </div>
-        <button onClick={downloadExcel} className="btn-ghost">
-          <Download size={14} />
+
+      </section>
+
+      {/* Export with date range */}
+      <section
+        className="card p-6 mb-10 animate-fade-up"
+        style={{ animationDelay: "0.1s", animationFillMode: "backwards" }}
+      >
+        <h2 className="font-display text-xl font-medium mb-4 flex items-center gap-2">
+          <Download size={18} strokeWidth={2.2} />
           Export to Excel
-        </button>
+        </h2>
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label
+              className="block text-xs mb-1.5 font-medium"
+              style={{ color: "var(--muted)" }}
+            >
+              From Date
+            </label>
+            <input
+              type="date"
+              className="field"
+              value={exportFrom}
+              onChange={(e) => setExportFrom(e.target.value)}
+            />
+          </div>
+          <div>
+            <label
+              className="block text-xs mb-1.5 font-medium"
+              style={{ color: "var(--muted)" }}
+            >
+              To Date
+            </label>
+            <input
+              type="date"
+              className="field"
+              value={exportTo}
+              onChange={(e) => setExportTo(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={downloadExcel}
+            className="btn-primary"
+            disabled={!exportFrom && !exportTo}
+          >
+            <Download size={16} />
+            Download
+          </button>
+          {(exportFrom || exportTo) && (
+            <button
+              onClick={() => {
+                setExportFrom("");
+                setExportTo("");
+              }}
+              className="btn-ghost"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        {!exportFrom && !exportTo && (
+          <p className="text-xs mt-3" style={{ color: "var(--muted)" }}>
+            Select a date range to export tasks within that period. Leave empty to export all tasks.
+          </p>
+        )}
       </section>
 
       {/* Task list */}

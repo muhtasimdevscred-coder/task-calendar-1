@@ -7,11 +7,20 @@ import { format } from "date-fns";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const filter = (searchParams.get("filter") as FilterType) || "all";
-    const refDateStr = searchParams.get("refDate");
-    const refDate = refDateStr ? new Date(refDateStr) : new Date();
+    const fromStr = searchParams.get("from");
+    const toStr = searchParams.get("to");
 
-    const { from, to } = getDateRange(filter, refDate);
+    let from: Date | null = null;
+    let to: Date | null = null;
+
+    if (fromStr) {
+      from = new Date(fromStr);
+      from.setHours(0, 0, 0, 0);
+    }
+    if (toStr) {
+      to = new Date(toStr);
+      to.setHours(23, 59, 59, 999);
+    }
 
     const tasks = await prisma.task.findMany({
       where: from && to ? { date: { gte: from, lte: to } } : {},
@@ -91,7 +100,14 @@ export async function GET(req: NextRequest) {
 
     const buffer = await workbook.xlsx.writeBuffer();
 
-    const filename = `tasks-${filter}-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+    const rangeLabel = fromStr && toStr
+      ? `${fromStr}_to_${toStr}`
+      : fromStr
+      ? `from_${fromStr}`
+      : toStr
+      ? `to_${toStr}`
+      : "all";
+    const filename = `tasks-${rangeLabel}-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
 
     return new NextResponse(new Uint8Array(buffer as ArrayBuffer), {
       status: 200,
