@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const tasks = await prisma.task.findMany({
       where: from && to ? { date: { gte: from, lte: to } } : {},
-      orderBy: { date: "asc" },
+      orderBy: { date: "desc" },
     });
 
     const workbook = new ExcelJS.Workbook();

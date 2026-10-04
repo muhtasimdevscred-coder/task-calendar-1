@@ -181,7 +181,7 @@ export default function Home() {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(t);
     });
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
   }, [tasks]);
 
   return (
