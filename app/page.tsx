@@ -36,6 +36,8 @@ const POST_TYPES = [
   "Other",
 ];
 
+const CUSTOM_TYPE = "__custom__";
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,12 +48,14 @@ export default function Home() {
   const [date, setDate] = useState(formatDateForInput(new Date()));
   const [task, setTask] = useState("");
   const [postType, setPostType] = useState(POST_TYPES[0]);
+  const [customPostType, setCustomPostType] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTask, setEditTask] = useState("");
   const [editPostType, setEditPostType] = useState("");
+  const [editCustomPostType, setEditCustomPostType] = useState("");
 
   // Export date range state
   const [exportFrom, setExportFrom] = useState("");
@@ -102,15 +106,19 @@ export default function Home() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task.trim()) return;
+    const finalPostType = postType === CUSTOM_TYPE ? customPostType.trim() : postType;
+    if (!finalPostType) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, task, postType }),
+        body: JSON.stringify({ date, task, postType: finalPostType }),
       });
       if (res.ok) {
         setTask("");
+        setCustomPostType("");
+        setPostType(POST_TYPES[0]);
         await fetchTasks();
       }
     } finally {
@@ -122,7 +130,13 @@ export default function Home() {
     setEditingId(t.id);
     setEditDate(formatDateForInput(t.date));
     setEditTask(t.task);
-    setEditPostType(t.postType);
+    if (POST_TYPES.includes(t.postType)) {
+      setEditPostType(t.postType);
+      setEditCustomPostType("");
+    } else {
+      setEditPostType(CUSTOM_TYPE);
+      setEditCustomPostType(t.postType);
+    }
   };
 
   const cancelEdit = () => {
@@ -130,13 +144,15 @@ export default function Home() {
   };
 
   const saveEdit = async (id: string) => {
+    const finalPostType = editPostType === CUSTOM_TYPE ? editCustomPostType.trim() : editPostType;
+    if (!finalPostType) return;
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         date: editDate,
         task: editTask,
-        postType: editPostType,
+        postType: finalPostType,
       }),
     });
     if (res.ok) {
@@ -267,8 +283,27 @@ export default function Home() {
                   {p}
                 </option>
               ))}
+              <option value={CUSTOM_TYPE}>Custom...</option>
             </select>
           </div>
+          {postType === CUSTOM_TYPE && (
+            <div className="md:col-span-2">
+              <label
+                className="block text-xs mb-1.5 font-medium"
+                style={{ color: "var(--muted)" }}
+              >
+                Custom Post Type
+              </label>
+              <input
+                type="text"
+                className="field"
+                value={customPostType}
+                onChange={(e) => setCustomPostType(e.target.value)}
+                placeholder="Enter custom post type…"
+                required
+              />
+            </div>
+          )}
           <div className="md:col-span-2 flex items-end">
             <button
               type="submit"
@@ -465,12 +500,25 @@ export default function Home() {
                                 {p}
                               </option>
                             ))}
-                            {!POST_TYPES.includes(editPostType) && (
+                            <option value={CUSTOM_TYPE}>Custom...</option>
+                            {!POST_TYPES.includes(editPostType) && editPostType !== CUSTOM_TYPE && (
                               <option value={editPostType}>
                                 {editPostType}
                               </option>
                             )}
                           </select>
+                          {editPostType === CUSTOM_TYPE && (
+                            <div className="md:col-span-3">
+                              <input
+                                type="text"
+                                className="field"
+                                value={editCustomPostType}
+                                onChange={(e) => setEditCustomPostType(e.target.value)}
+                                placeholder="Enter custom post type…"
+                                required
+                              />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <>
